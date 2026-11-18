@@ -75,6 +75,10 @@ func TestInferSpotifyIdTypeEpisodeContexts(t *testing.T) {
 
 // These used to be reported as tracks, which meant their ids were base62
 // decoded as track gids and failed confusingly later on.
+// webApiIdUri is the Web API's track list uri as given since November 2026,
+// with an id of the list after it.
+const webApiIdUri = librespot.WebApiTrackListUri + ":12jOx46A03V4WM1Ocx3vuZ"
+
 // A context with no uri, or with the Web API's, is a bare list of items, what
 // the Web API plays for "uris": its items decide, and gids alone are tracks.
 func TestInferSpotifyIdTypeFromContext(t *testing.T) {
@@ -84,6 +88,11 @@ func TestInferSpotifyIdTypeFromContext(t *testing.T) {
 	webApi := func(tracks ...*connectpb.ContextTrack) *connectpb.Context {
 		ctx := page(tracks...)
 		ctx.Uri = librespot.WebApiTrackListUri
+		return ctx
+	}
+	webApiId := func(tracks ...*connectpb.ContextTrack) *connectpb.Context {
+		ctx := page(tracks...)
+		ctx.Uri = webApiIdUri
 		return ctx
 	}
 	gid := []byte{0x34, 0x95, 0x09, 0xf4, 0xc5, 0x1f, 0x47, 0x46, 0x87, 0xb6, 0x81, 0xfc, 0x9b, 0xe9, 0x3e, 0x27}
@@ -104,6 +113,10 @@ func TestInferSpotifyIdTypeFromContext(t *testing.T) {
 		{"web api gids", webApi(&connectpb.ContextTrack{Gid: gid}), librespot.SpotifyIdTypeTrack},
 		{"no uri, no items", &connectpb.Context{Pages: []*connectpb.ContextPage{{}}}, librespot.SpotifyIdTypeUnknown},
 		{"web api, no items", &connectpb.Context{Uri: librespot.WebApiTrackListUri}, librespot.SpotifyIdTypeUnknown},
+		{"web api with id, tracks", webApiId(&connectpb.ContextTrack{Uri: "spotify:track:1BdI8NEvZx61tnkbuAxC5x"}), librespot.SpotifyIdTypeTrack},
+		{"web api with id, episodes", webApiId(&connectpb.ContextTrack{Uri: "spotify:episode:512ojhOuo1ktJprKbVcKyQ"}), librespot.SpotifyIdTypeEpisode},
+		{"web api with id, gids", webApiId(&connectpb.ContextTrack{Gid: gid}), librespot.SpotifyIdTypeTrack},
+		{"web api with id, no items", &connectpb.Context{Uri: webApiIdUri}, librespot.SpotifyIdTypeUnknown},
 		{"nothing", &connectpb.Context{}, librespot.SpotifyIdTypeUnknown},
 	}
 
@@ -111,6 +124,15 @@ func TestInferSpotifyIdTypeFromContext(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			require.Equal(t, tt.want, librespot.InferSpotifyIdTypeFromContext(tt.ctx))
 		})
+	}
+}
+
+func TestIsWebApiTrackListUri(t *testing.T) {
+	for _, uri := range []string{librespot.WebApiTrackListUri, webApiIdUri} {
+		require.True(t, librespot.IsWebApiTrackListUri(uri), uri)
+	}
+	for _, uri := range []string{"", "spotify:webapis", "spotify:webapi2:12jOx46A03V4WM1Ocx3vuZ", "spotify:playlist:37i9dQZF1DXcBWIGoYBM5M"} {
+		require.False(t, librespot.IsWebApiTrackListUri(uri), uri)
 	}
 }
 

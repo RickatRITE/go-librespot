@@ -413,7 +413,7 @@ func TestContextSweepSkipsBareTrackLists(t *testing.T) {
 	})
 	p.app.cfg.Metadata.ContextSweep = true
 
-	for _, uri := range []string{"", librespot.WebApiTrackListUri} {
+	for _, uri := range []string{"", librespot.WebApiTrackListUri, librespot.WebApiTrackListUri + ":12jOx46A03V4WM1Ocx3vuZ"} {
 		p.scheduleContextMetaPrefetch(uri)
 		require.Empty(t, p.lastFullMetaContext, "no context sweep for %q", uri)
 	}

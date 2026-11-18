@@ -555,13 +555,13 @@ func (p *AppPlayer) prefetchWindowMetadata() {
 // context was already swept. Runs on the Run goroutine.
 //
 // A list of items played with no context of its own, as the Web API plays
-// "uris" (with no uri or with WebApiTrackListUri), has nothing to enumerate:
-// its uri names no context that could be resolved.
+// "uris" (with no uri or with a Web API track list uri), has nothing to
+// enumerate: its uri names no context that could be resolved.
 func (p *AppPlayer) scheduleContextMetaPrefetch(contextUri string) {
 	if p.meta == nil || !p.app.cfg.Metadata.ContextSweep {
 		return
 	}
-	if contextUri == "" || contextUri == librespot.WebApiTrackListUri || contextUri == p.lastFullMetaContext {
+	if contextUri == "" || librespot.IsWebApiTrackListUri(contextUri) || contextUri == p.lastFullMetaContext {
 		return
 	}
 
